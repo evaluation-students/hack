@@ -17,7 +17,7 @@ app.config['SECRET_KEY'] = 'your_secret_key'
 mongo.init_app(app)
 
 # Enable CORS
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 def token_required(f):
     @wraps(f)
@@ -32,6 +32,34 @@ def token_required(f):
             return jsonify({'message': 'Token is invalid!'}), 403
         return f(current_user, *args, **kwargs)
     return decorated
+
+def call_plagscan_api(file_path):
+    """Calls the Plagscan API to check for plagiarism."""
+    url = "https://plagiarism-checker-and-auto-citation-generator-multi-lingual.p.rapidapi.com/plagiarism"
+    headers = {
+        "x-rapidapi-key": "47db59084amsh5aa33549068c032p151523jsnc941c40d7d71",
+        "x-rapidapi-host": "plagiarism-checker-and-auto-citation-generator-multi-lingual.p.rapidapi.com",
+        "Content-Type": "application/json"
+    }
+    with open(file_path, 'r', encoding='utf-8') as file:
+        text_content = file.read()
+
+    payload = {
+        "text": text_content,
+        "language": "en",
+        "includeCitations": False,
+        "scrapeSources": False
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        result = response.json()
+        return {
+            'percentPlagiarism': result.get('percentPlagiarism', 0)
+        }
+    else:
+        return {'error': 'Failed to check plagiarism', 'status_code': response.status_code}
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -84,6 +112,33 @@ def add_student(current_user):
         return jsonify(message="Document added"), 200
     else:
         return jsonify(message="Invalid data"), 400
+
+@app.route('/user-assignments', methods=['GET'])
+@token_required
+def get_user_assignments(current_user):
+    username = request.args.get('username')
+    if not username:
+        return jsonify({'message': 'Username is missing!'}), 400
+
+    user = User.find_by_username(username)
+    if not user:
+        return jsonify({'message': 'User not found!'}), 404
+
+    assignments = user.get('homework', [])
+    return jsonify(assignments), 200
+
+
+@app.route('/upload-homework', methods=['POST'])
+@token_required
+def upload_homework(current_user):
+    if 'homework' not in request.files:
+        return jsonify({'message': 'No file part'}), 400
+    file = request.files['homework']
+    if file.filename == '':
+        return jsonify({'message': 'No selected file'}), 400
+    # Save the file or process it as needed
+    return jsonify({'message': 'File uploaded successfully'}), 200
+
 
 if __name__ == '__main__':
     app.run(debug=True)

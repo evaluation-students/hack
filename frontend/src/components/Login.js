@@ -20,7 +20,7 @@ const Login = ({ onLoginSuccess }) => {
     if (response.ok) {
       console.log('Login successful:', data);
       localStorage.setItem('token', data.token);
-      onLoginSuccess(data.role); // Pass the user role to the success handler
+      onLoginSuccess(data.role, username); // Pass the user role and username to the success handler
       navigate(data.role === 'student' ? '/student' : '/teacher');
     } else {
       console.error('Login failed:', data.message);
