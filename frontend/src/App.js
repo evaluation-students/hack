@@ -8,14 +8,14 @@ const App = () => {
 
   useEffect(() => {
     // Fetch initial evaluations from the backend
-    fetch('http://localhost:5000/find')
+    fetch('http://localhost:5000/students')
       .then(response => response.json())
       .then(data => setEvaluations(data));
   }, []);
 
   const addEvaluation = (evaluation) => {
     // Send the new evaluation to the backend
-    fetch('http://localhost:5000/add', {
+    fetch('http://localhost:5000/students', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
