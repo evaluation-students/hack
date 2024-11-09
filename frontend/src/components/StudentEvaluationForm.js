@@ -1,4 +1,4 @@
-// src/StudentEvaluationForm.js
+// frontend/src/components/StudentEvaluationForm.js
 import React, { useState } from 'react';
 
 const StudentEvaluationForm = ({ addEvaluation }) => {

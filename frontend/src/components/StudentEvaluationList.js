@@ -1,4 +1,4 @@
-// src/StudentEvaluationList.js
+// frontend/src/components/StudentEvaluationList.js
 import React from 'react';
 
 const StudentEvaluationList = ({ evaluations }) => {

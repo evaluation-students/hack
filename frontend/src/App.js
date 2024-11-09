@@ -1,39 +1,33 @@
-// src/App.js
-import React, { useState, useEffect } from 'react';
-import StudentEvaluationForm from './components/StudentEvaluationForm';
-import StudentEvaluationList from './components/StudentEvaluationList';
+// frontend/src/App.js
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import Login from './components/Login';
+import Register from './components/Register';
+import StudentPage from './components/StudentPage';
+import TeacherPage from './components/TeacherPage';
+import './App.css';
 
 const App = () => {
-  const [evaluations, setEvaluations] = useState([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState('');
 
-  useEffect(() => {
-    // Fetch initial evaluations from the backend
-    fetch('http://localhost:5000/students')
-      .then(response => response.json())
-      .then(data => setEvaluations(data));
-  }, []);
-
-  const addEvaluation = (evaluation) => {
-    // Send the new evaluation to the backend
-    fetch('http://localhost:5000/students', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(evaluation),
-    })
-      .then(response => response.json())
-      .then(newEvaluation => {
-        setEvaluations([...evaluations, newEvaluation]);
-      });
+  const handleLoginSuccess = (role) => {
+    console.log('Login success, role:', role);
+    setIsAuthenticated(true);
+    setUserRole(role);
   };
 
+  console.log('Rendering App, isAuthenticated:', isAuthenticated, 'userRole:', userRole);
+
   return (
-    <div>
-      <h1>Student Evaluation</h1>
-      <StudentEvaluationForm addEvaluation={addEvaluation} />
-      <StudentEvaluationList evaluations={evaluations} />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/student" element={isAuthenticated && userRole === 'student' ? <StudentPage /> : <Navigate to="/" />} />
+        <Route path="/teacher" element={isAuthenticated && userRole === 'teacher' ? <TeacherPage /> : <Navigate to="/" />} />
+      </Routes>
+    </Router>
   );
 };
 
