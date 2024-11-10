@@ -42,11 +42,36 @@ const StudentPage = ({ username }) => {
 
     if (response.ok) {
       const result = await response.json();
-      setPlagiarismResult(result);
-      alert(`Homework uploaded successfully. Plagiarism: ${result.percentPlagiarism}%`);
-      setHomework(null);
-      setHomeworkDescription('');
-      setSelectedAssignment(null);
+      alert('Homework uploaded successfully');
+
+      // Read the file content
+      const fileReader = new FileReader();
+      fileReader.onload = async (event) => {
+        const fileContent = event.target.result;
+
+        // Call the plagiarism check endpoint
+        const plagiarismResponse = await fetch('http://localhost:5000/check_plagiarism', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ file: fileContent })
+        });
+
+        if (plagiarismResponse.ok) {
+          const plagiarismResult = await plagiarismResponse.json();
+          console.log('Plagiarism result:', plagiarismResult);
+          setPlagiarismResult(plagiarismResult);
+          alert(`Plagiarism: ${plagiarismResult.plagiarism_result}%`);
+        } else {
+          alert('Failed to check plagiarism');
+        }
+
+        setHomework(null);
+        setHomeworkDescription('');
+        setSelectedAssignment(null);
+      };
+      fileReader.readAsText(homework);
     } else {
       alert('Failed to upload homework');
     }

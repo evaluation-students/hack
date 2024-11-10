@@ -8,6 +8,9 @@ import datetime
 from functools import wraps
 from models import User
 from db import mongo
+import os
+import requests
+import PyPDF2
 
 app = Flask(__name__)
 
@@ -41,8 +44,17 @@ def call_plagscan_api(file_path):
         "x-rapidapi-host": "plagiarism-checker-and-auto-citation-generator-multi-lingual.p.rapidapi.com",
         "Content-Type": "application/json"
     }
-    with open(file_path, 'r', encoding='utf-8') as file:
-        text_content = file.read()
+    file_name, file_extension = os.path.splitext(file_path)
+    if file_extension == ".txt":
+        with open(file_path, 'r') as file:
+            text_content = file.read()
+    elif file_extension == ".pdf":
+        text_content = ""
+        with open(file_path, "rb") as file:  # Open in binary mode
+            reader = PyPDF2.PdfReader(file)
+            for page_number in range(len(reader.pages)):
+                page = reader.pages[page_number]
+                text_content += page.extract_text() or ""
 
     payload = {
         "text": text_content,
@@ -60,6 +72,33 @@ def call_plagscan_api(file_path):
         }
     else:
         return {'error': 'Failed to check plagiarism', 'status_code': response.status_code}
+
+@app.route('/check_plagiarism', methods=['POST'])
+def check_plagiarism():
+    """Handle file upload and plagiarism check."""
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'})
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'})
+
+     # Save file temporarily to check with Plagscan API
+    file_path = f'/tmp/{file.filename}'
+    file.save(file_path)
+    print(f"File saved temporarily at {file_path}")
+
+    # Call Plagscan API
+    plagiarism_result = call_plagscan_api(file_path)
+    print(f"Plagscan API result: {plagiarism_result}")
+
+    # Remove the temporary file
+    os.remove(file_path)
+    print(f"Temporary file {file_path} removed")
+
+    # Return the result as JSON (or you could render a template to show the results)
+    return jsonify(plagiarism_result)
+
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -138,6 +177,12 @@ def upload_homework(current_user):
         return jsonify({'message': 'No selected file'}), 400
     # Save the file or process it as needed
     return jsonify({'message': 'File uploaded successfully'}), 200
+
+@app.route('/user-homeworks', methods=['GET'])
+@token_required
+def get_user_homeworks(current_user):
+    homeworks = current_user.get('homework', [])
+    return jsonify(homeworks), 200
 
 
 if __name__ == '__main__':

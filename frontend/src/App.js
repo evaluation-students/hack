@@ -27,7 +27,7 @@ const App = () => {
         <Route path="/" element={<Login onLoginSuccess={handleLoginSuccess} />} />
         <Route path="/register" element={<Register />} />
         <Route path="/student" element={isAuthenticated && userRole === 'student' ? <StudentPage username={username} /> : <Navigate to="/" />} />
-        <Route path="/teacher" element={isAuthenticated && userRole === 'teacher' ? <TeacherPage username={username} /> : <Navigate to="/" />} />
+        <Route path="/teacher/*" element={isAuthenticated && userRole === 'teacher' ? <TeacherPage username={username} /> : <Navigate to="/" />} />
       </Routes>
     </Router>
   );
